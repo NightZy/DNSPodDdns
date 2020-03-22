@@ -18,19 +18,18 @@ arPass=""
 
 # 获得外网ipv4地址
 arIpAdress() {
-    local inter=$(nvram get wan0_ipaddr)
-    echo $inter
+    local ipv4=$(ip addr show ppp0 | grep 'inet ')
+	local ipv4=${ipv4#*inet }
+	local ipv4=${ipv4% peer*}
+	echo ${ipv4}
 }
 
 # 获得外网ipv6地址
 arIpAdress_v6() {
-    local hostIP_v6=$(ip addr show ppp0 | grep inet6 | sed 's/\/.*//g' | awk '{print $2}'  | grep 2408)
-    while [[ -z $hostIP_v6 ]]
-    do
-        sleep 60
-        hostIP_v6=$(ip addr show ppp0 | grep inet6 | sed 's/\/.*//g' | awk '{print $2}'  | grep 2408)
-    done
-    echo $hostIP_v6
+    local ipv6=$(ip addr show br0 | grep 'inet6 [^f]')
+	local ipv6=${ipv6#*inet6 }
+	local ipv6=${ipv6%/*}
+	echo ${ipv6}
 }
 
 # 读取接口数据
@@ -108,41 +107,47 @@ arDdnsUpdate_v6() {
 arDdnsCheck() {
     # 全局变量
     domain=$1
-    subdomain=$2
+    subdomainv4=$2
+    subdomainv6=$3
     getIDs
 
     local postRS hostIP lastIP postRS_v6 hostIP_v6 lastIP_v6
 
     # ipv4
-    hostIP=$(arIpAdress)
-    echo "hostIP: ${hostIP}"
-    lastIP=$(arNslookup)
-    echo "lastIP: ${lastIP}"
+    if [ -n "$subdomainv4" ]
+    then
+        hostIP=$(arIpAdress)
+        echo "hostIP: ${hostIP}"
+        lastIP=$(arNslookup)
+        echo "lastIP: ${lastIP}"
 
-    if [ "$lastIP" != "$hostIP" ]; then
-        arDdnsUpdate
-        if [ $? -ne 0 ]; then
-            /sbin/ddns_custom_updated 1
+        if [ "$lastIP" != "$hostIP" ]; then
+            arDdnsUpdate
+            if [ $? -ne 0 ]; then
+                /sbin/ddns_custom_updated 1
+            else
+                /sbin/ddns_custom_updated 0
+            fi
         else
-            /sbin/ddns_custom_updated 0
+            /sbin/ddns_custom_updated 1
         fi
-    else
-        /sbin/ddns_custom_updated 1
     fi
 
     # ipv6
-    hostIP_v6=$(arIpAdress_v6)
-    echo "hostIP_v6: ${hostIP_v6}"
-    lastIP_v6=$(arNslookup_v6)
-    echo "lastIP_v6: ${lastIP_v6}"
+    if [ -n "subdomainv6" ]
+    then
+        hostIP_v6=$(arIpAdress_v6)
+        echo "hostIP_v6: ${hostIP_v6}"
+        lastIP_v6=$(arNslookup_v6)
+        echo "lastIP_v6: ${lastIP_v6}"
 
-    if [ "$lastIP_v6" != "$hostIP_v6" ]; then
-        arDdnsUpdate_v6 ${hostIP_v6}
+        if [ "$lastIP_v6" != "$hostIP_v6" ]; then
+            arDdnsUpdate_v6 ${hostIP_v6}
+        fi
     fi
 }
 
 ###################################################
 # 检查更新域名
-# 指定 domain subdomain
-arDdnsCheck "frostfall.cn" ""
-
+# 指定 domain subdomainv4 subdomaipv6
+arDdnsCheck "frostfall.cn" "" ""
