@@ -17,17 +17,17 @@ arToken="23745,b55b4692822de38a8d0955bc66bbfc5a"
 # 获得外网ipv4地址
 arIpAdress() {
     local ipv4=$(ip addr show ppp0 | grep 'inet ')
-	ipv4=${ipv4#*inet }
-	ipv4=${ipv4% peer*}
-	echo ${ipv4}
+    ipv4=${ipv4#*inet }
+    ipv4=${ipv4% peer*}
+    echo ${ipv4}
 }
 
 # 获得外网ipv6地址
 arIpAdress_v6() {
     local ipv6=$(ip addr show br0 | grep 'inet6 [^f]')
-	ipv6=${ipv6#*inet6 }
-	ipv6=${ipv6%/*}
-	echo ${ipv6}
+    ipv6=${ipv6#*inet6 }
+    ipv6=${ipv6%/*}
+    echo ${ipv6}
 }
 
 # 读取接口数据
